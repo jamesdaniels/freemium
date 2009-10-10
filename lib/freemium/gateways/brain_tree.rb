@@ -62,7 +62,7 @@ module Freemium
           :amount => sprintf("%.2f", amount.cents.to_f / 100)
         })
         p.commit
-        return FreemiumTransaction.new(:billing_key => vault_id, :amount => amount, :success => p.response.success?)
+        return FreemiumTransaction.new(:billing_key => vault_id, :amount => amount, :success => p.response.success?, :gateway_message => p.response.message)
       end
 
       # Removes a card from SecureVault. Called automatically when the subscription expires.

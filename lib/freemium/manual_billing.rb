@@ -12,9 +12,9 @@ module Freemium
 
     # charges this subscription.
     # assumes, of course, that this module is mixed in to the Subscription model
-    def charge!
+    def charge!(subscribable)
       # Save the transaction immediately
-      @transaction = Freemium.gateway.charge(billing_key, self.installment_amount)
+      @transaction = Freemium.gateway.charge(billing_key, self.installment_amount, subscribable)
       self.transactions << @transaction
       self.last_transaction_at = Time.now # TODO this could probably now be inferred from the list of transactions
       self.save(false)
@@ -35,7 +35,7 @@ module Freemium
       # the process you should run periodically
       def run_billing
         # charge all billable subscriptions
-        @transactions = find_billable.collect{|b| b.charge!}
+        @transactions = find_billable.collect{|b| b.charge!(b.subscribable)}
         # actually expire any subscriptions whose time has come
         expire
 

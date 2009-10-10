@@ -29,13 +29,13 @@ class SubscriptionMailer < ActionMailer::Base
     @subject              = "Billing report (#{@amount_charged} charged)"
     @body[:transactions]  = transactions
     @body[:amount_charged] = @amount_charged
-  end  
+  end
 
   protected
 
   def setup_email(user)
     @recipients  = "#{user.respond_to?(:email) ? user.email : user}"
-    @from        = "billing@example.com"
+    @from        = APP_CONFIG[:noreply_email]
     @sent_on     = Time.now
     @body[:user] = user
   end

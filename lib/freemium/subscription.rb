@@ -22,7 +22,7 @@ module Freemium
               
         named_scope :paid, :include => [:subscription_plan], :conditions => "freemium_subscription_plans.rate_cents > 0"
         named_scope :due, :conditions =>  ['paid_through <= ?', Date.today] # could use the concept of a next retry date
-        named_scope :expired, :conditions => ['expire_on >= paid_through AND expire_on <= ?', Date.today]
+        named_scope :expired, :conditions => ['(expire_on >= paid_through OR paid_through IS NULL) AND expire_on <= ?', Date.today]
               
         before_validation :set_paid_through
         before_validation :set_started_on
@@ -97,7 +97,7 @@ module Freemium
     # with an "address" property on the credit card.
     def store_credit_card_offsite
       if credit_card && credit_card.changed? && credit_card.valid? 
-        response = billing_key ? Freemium.gateway.update(billing_key, credit_card, credit_card.address) : Freemium.gateway.store(credit_card, credit_card.address)
+        response = billing_key ? Freemium.gateway.update(billing_key, credit_card, credit_card.address, subscribable) : Freemium.gateway.store(credit_card, credit_card.address, subscribable)
         raise Freemium::CreditCardStorageError.new(response.message) unless response.success?
         self.billing_key = response.billing_key
         self.expire_on = nil
@@ -259,10 +259,7 @@ module Freemium
     def expire!
       Freemium.mailer.deliver_expiration_notice(self)
       # downgrade to a free plan
-      self.expire_on = Date.today
-      self.subscription_plan = Freemium.expired_plan
-      # throw away this credit card (they'll have to start all over again)
-      self.save!
+      self.destroy
     end
 
     def expired?
