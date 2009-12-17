@@ -18,7 +18,7 @@ module Freemium
         
         composed_of :rate, :class_name => 'Money', :mapping => [ %w(rate_cents cents) ], :allow_nil => true
         
-        validates_uniqueness_of :redemption_key, :allow_nil => true, :allow_blank => true
+        validates_presence_of :key
         validates_presence_of :name
         validates_presence_of :rate_cents
       end

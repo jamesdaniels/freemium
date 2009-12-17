@@ -30,7 +30,7 @@ module Freemium
                 
         attr_accessible :number, :month, :year, :first_name, :last_name, :start_month, :start_year, :issue_number, :verification_value, :card_type, :zip_code       
                 
-        has_one :subscription, :class_name => "FreemiumSubscription"
+        has_one :subscription, :class_name => "FreemiumSubscription", :foreign_key => 'credit_card_id'
         
         before_validation :sanitize_data, :if => :changed?
       end
@@ -237,8 +237,8 @@ module Freemium
     end
     
     def validate_essential_attributes #:nodoc:
-      errors.add :first_name, "cannot be empty"      if @first_name.blank?
-      errors.add :last_name,  "cannot be empty"      if @last_name.blank?
+      #errors.add :first_name, "cannot be empty"      if @first_name.blank?
+      #errors.add :last_name,  "cannot be empty"      if @last_name.blank?
       errors.add :month,      "is not a valid month" unless valid_month?(@month)
       errors.add :year,       "expired"              if expired?
       errors.add :year,       "is not a valid year"  unless valid_expiration_year?(@year)

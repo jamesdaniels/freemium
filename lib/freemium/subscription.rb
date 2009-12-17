@@ -17,6 +17,8 @@ module Freemium
         has_many :coupon_redemptions, :conditions => "freemium_coupon_redemptions.expired_on IS NULL", :class_name => "FreemiumCouponRedemption", :foreign_key => :subscription_id, :dependent => :destroy
         has_many :coupons, :through => :coupon_redemptions, :conditions => "freemium_coupon_redemptions.expired_on IS NULL"
   
+				default_scope :select => '`freemium_subscriptions`.*'
+
         # Auditing
         has_many :transactions, :class_name => "FreemiumTransaction", :foreign_key => :subscription_id
               
@@ -24,8 +26,10 @@ module Freemium
         named_scope :due, :conditions =>  ['paid_through <= ?', Date.today] # could use the concept of a next retry date
         named_scope :expired, :conditions => ['expire_on >= paid_through AND expire_on <= ?', Date.today]
               
+				before_validation :set_subscription_plan
         before_validation :set_paid_through
         before_validation :set_started_on
+        before_validation :switch_to_original_card
         before_save :store_credit_card_offsite
         before_save :discard_credit_card_unless_paid
         before_destroy :cancel_in_remote_system
@@ -34,19 +38,36 @@ module Freemium
         after_update :audit_update
         after_destroy :audit_destroy
            
-        validates_presence_of :subscribable
-        validates_associated :subscribable
+        # validates_presence_of :subscribable
+        # validates_associated :subscribable
         validates_presence_of :subscription_plan
         validates_presence_of :paid_through, :if => :paid? 
         validates_presence_of :started_on
         validates_presence_of :credit_card, :if => :paid?
         validates_associated :credit_card#, :if => :paid?
+
+				accepts_nested_attributes_for :credit_card, :reject_if => :reject_card?
       end
       base.extend ClassMethods
     end
     
+    def original_credit_card_id
+    end
+    
+    def original_credit_card_id=(new_value)
+      @original_credit_card_id = new_value
+    end
+    
     def original_plan
       @original_plan ||= FreemiumSubscriptionPlan.find(self.changes["subscription_plan_id"].first) if subscription_plan_id_changed?
+    end
+    
+    def use_existing_card
+      @use_existing_card || true
+    end
+    
+    def use_existing_card=(new_value)
+      @use_existing_card = new_value
     end
     
     ##
@@ -54,6 +75,21 @@ module Freemium
     ##
     
     protected
+
+    def switch_to_original_card
+      if @use_existing_card && @use_existing_card == '1' && @original_credit_card_id
+        self.credit_card = FreemiumCreditCard.find(@original_credit_card_id)
+      end
+      true
+    end
+    
+    def reject_card?
+      @use_existing_card && @use_existing_card == '1'
+    end
+
+		def set_subscription_plan
+			self.subscription_plan = FreemiumSubscriptionPlan.find(subscription_plan_id) if subscription_plan.nil? && subscription_plan_id?
+		end
 
     def set_paid_through
       if subscription_plan_id_changed? && !paid_through_changed?
