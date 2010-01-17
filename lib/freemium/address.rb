@@ -3,6 +3,7 @@ module Freemium
   # for now it's just a dumb (and therefore untested) data structure.
   class Address
     attr_accessor :street, :city, :state, :zip, :country, :email
+		alias_attribute :zip_code, :zip
     def initialize(options = {})
       options.each do |key, value|
         setter = "#{key}="

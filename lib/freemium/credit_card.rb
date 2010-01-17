@@ -30,7 +30,7 @@ module Freemium
                 
         attr_accessible :number, :month, :year, :first_name, :last_name, :start_month, :start_year, :issue_number, :verification_value, :card_type, :zip_code       
                 
-        has_one :subscription, :class_name => "FreemiumSubscription"
+        has_one :subscription, :class_name => "FreemiumSubscription", :foreign_key => 'credit_card_id'
         
         before_validation :sanitize_data, :if => :changed?
       end
