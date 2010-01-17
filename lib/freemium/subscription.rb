@@ -296,13 +296,7 @@ module Freemium
     end
     
     def credit(amount)
-      self.paid_through = if amount.cents % rate.cents == 0
-        self.paid_through + (amount.cents / rate.cents).months
-      else
-        self.paid_through + (amount.cents / daily_rate.cents).days
-      end 
-      
-      # if they've paid again, then reset expiration
+      self.paid_through += 30.days
       self.expire_on = nil
       self.in_trial = false      
     end
